@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jaxb:bindings xmlns:jaxb="http://java.sun.com/xml/ns/jaxb" xmlns:xjc="http://java.sun.com/xml/ns/jaxb/xjc" xmlns:xs="http://www.w3.org/2001/XMLSchema" version="1.0" jaxb:extensionBindingPrefixes="xjc">
+
+    <jaxb:globalBindings generateValueClass="true">
+        <jaxb:javaType name="java.net.URI" xmlType="xs:anyURI" parseMethod="java.net.URI.create" printMethod="toString"/>
+    </jaxb:globalBindings>
+</jaxb:bindings>

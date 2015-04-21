@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+/**
+ * Copyright (c) Cohesive Integrations, LLC
+ *
+ * This is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation, either version 3 of the License, or any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+ * details. A copy of the GNU Lesser General Public License is distributed along with this program and can be found at
+ * <http://www.gnu.org/licenses/lgpl.html>.
+ *
+ **/
+ -->
+<xsd:schema version="1.0" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+
+    <xsd:element name="probe">
+        <xsd:complexType>
+            <xsd:choice>
+                <xsd:element name="respondTo" type="xsd:anyURI" minOccurs="1" maxOccurs="1" />
+                <xsd:element name="respondToPayloadType" type="payloadType" minOccurs="1" maxOccurs="1" />
+                <xsd:element name="serviceContractID" type="xsd:anyURI" minOccurs="0" maxOccurs="unbounded" />
+            </xsd:choice>
+            <xsd:attribute name="id" type="xsd:anyURI" use="required" />
+            <xsd:attribute name="contractID" type="xsd:anyURI" use="required" />
+        </xsd:complexType>
+    </xsd:element>
+
+    <xsd:simpleType name="payloadType">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="XML" />
+            <xsd:enumeration value="JSON" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+</xsd:schema>

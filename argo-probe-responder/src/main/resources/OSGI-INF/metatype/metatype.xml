@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright (C) 2014 Cohesive Integrations, LLC (info@cohesiveintegrations.com)
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+            http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<metatype:MetaData xmlns:metatype="http://www.osgi.org/xmlns/metatype/v1.0.0">
+
+    <OCD description="Argo Probe Responder which will send matching services back to respondTo address" name="Argo Probe Responder" id="argo-probe-responder">
+
+        <AD name="Multicast Address" id="multicastAddress" required="true" type="String"
+            default="230.0.0.1"/>
+
+        <AD name="Multicast Port" id="multicastPort" required="true" type="Integer"
+            default="4003"/>
+
+        <AD name="Ignore Local Probes" id="ignoreLocalRespondTo" required="true" type="Boolean"
+            default="true" description="Check to ignore any multicast probes that have a respondTo address of this local server."/>
+
+    </OCD>
+
+    <Designate pid="argo-probe-responder">
+        <Object ocdref="argo-probe-responder"/>
+    </Designate>
+</metatype:MetaData>

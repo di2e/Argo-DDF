@@ -1,0 +1,3 @@
+xjc -b binding.xml -d jaxb -p net.di2e.ecdr.registry.rtsd.xml probe.xsd
+
+xjc -b binding.xml -d jaxb -p net.di2e.ecdr.registry.rtsd.xml services.xsd

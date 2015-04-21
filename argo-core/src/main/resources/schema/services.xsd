@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+/**
+ * Copyright (c) Cohesive Integrations, LLC
+ *
+ * This is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation, either version 3 of the License, or any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+ * details. A copy of the GNU Lesser General Public License is distributed along with this program and can be found at
+ * <http://www.gnu.org/licenses/lgpl.html>.
+ *
+ **/
+ -->
+<xsd:schema version="1.0" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+    <xsd:element name="services">
+        <xsd:complexType>
+            <xsd:sequence>
+                <xsd:element name="service" type="service" minOccurs="1" maxOccurs="unbounded" />
+            </xsd:sequence>
+            <xsd:attribute name="probeID" type="xsd:anyURI" use="required" />
+            <xsd:attribute name="responseID" type="xsd:anyURI" use="required" />
+        </xsd:complexType>
+    </xsd:element>
+
+    <xsd:complexType name="service">
+        <xsd:all>
+            <xsd:element name="ipAddress" type="xsd:string" minOccurs="1" nillable="true" />
+            <xsd:element name="port" type="xsd:int" minOccurs="1" nillable="true" />
+            <xsd:element name="url" type="xsd:anyURI" minOccurs="1" />
+            <xsd:element name="description" type="xsd:string" minOccurs="1" />
+            <xsd:element name="data" type="xsd:string" minOccurs="1" />
+            <xsd:element name="ttl" type="xsd:int" minOccurs="1" nillable="true" />
+            <xsd:element name="contractDescription" type="xsd:string" minOccurs="1" />
+            <xsd:element name="serviceName" type="xsd:string" minOccurs="1" />
+            <xsd:element name="consumability" type="consumability" />
+        </xsd:all>
+        <xsd:attribute name="id" type="xsd:anyURI" use="required" />
+        <xsd:attribute name="contractID" type="xsd:anyURI" use="optional" />
+    </xsd:complexType>
+
+    <xsd:simpleType name="consumability">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="HUMAN_CONSUMABLE" />
+            <xsd:enumeration value="MACHINE_CONSUMABLE" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+</xsd:schema>
