@@ -46,9 +46,10 @@ public class DefaultServiceMappings {
 
     public enum ServiceMap {
 
-        CDR_REST_SEARCH( "CDR REST Search Service", "urn:uuid:b10b8c34-76f4-4e1d-938d-20eee3377d22" ), 
-        CDR_REST_BROKERED_SEARCH_SERVICE( "CDR REST Brokered Search Service", "urn:uuid:feaf9379-970b-4bd8-ac90-b002b5f8c190" );
-
+        CDR_REST_SEARCH_SERVICE( "CDR REST Search Service", "urn:uuid:b10b8c34-76f4-4e1d-938d-20eee3377d22" ), 
+        CDR_REST_BROKERED_SEARCH_SERVICE( "CDR REST Brokered Search Service", "urn:uuid:feaf9379-970b-4bd8-ac90-b002b5f8c190" ),
+        CDR_REST_DESCRIBE_SERVICE( "CDR REST Describe Service", "urn:uuid:009c0674-619d-4edc-8ed5-b709b22975ff" );
+        
         private final String serviceType;
         private final String serviceContractId;
 
