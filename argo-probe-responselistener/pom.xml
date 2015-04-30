@@ -91,7 +91,7 @@
                 <configuration>
                     <instructions>
                         <Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
-                        <Embed-Dependency>httpclient,httpcore,commons-io</Embed-Dependency>
+                        <Embed-Dependency>httpclient,httpcore,commons-io,platform-configuration-impl</Embed-Dependency>
                     </instructions>
                 </configuration>
             </plugin>
