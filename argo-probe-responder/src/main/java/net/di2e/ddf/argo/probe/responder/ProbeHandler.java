@@ -258,7 +258,7 @@ public class ProbeHandler implements Runnable {
                     service.setUrl( platformConfiguration.getProtocol() + platformConfiguration.getHostname() + ":" + platformConfiguration.getPort() + serviceInfo.getServiceRelativeUrl() );
                     service.setIpAddress( platformConfiguration.getHostname() );
                     service.setPort( platformConfiguration.getPort() );
-                    service.setServiceName( serviceInfo.getServiceType() );
+                    service.setServiceName( platformConfiguration.getSiteName() );
                     service.setDescription( getServiceDescription( serviceInfo ) );
                     service.setContractDescription( serviceInfo.getServiceType() );
                     service.setConsumability( Consumability.MACHINE_CONSUMABLE );
