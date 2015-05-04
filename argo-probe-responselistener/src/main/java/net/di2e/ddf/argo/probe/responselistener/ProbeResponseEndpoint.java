@@ -16,7 +16,6 @@
 package net.di2e.ddf.argo.probe.responselistener;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Dictionary;
 import java.util.HashSet;
 import java.util.Hashtable;
@@ -93,7 +92,7 @@ public class ProbeResponseEndpoint {
     }
 
     @POST
-    @Consumes( "text/xml" )
+    @Consumes( { "text/xml", "application/xml", "application/*+xml" } )
     public void getXMLServices( Services services ) {
         LOGGER.debug( "Got a probe response in XML format:\n{}", services );
         Set<String> createdSources = new HashSet<String>();
