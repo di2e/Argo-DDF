@@ -43,6 +43,8 @@ import org.slf4j.LoggerFactory;
 public class ProbeGenerator {
 
     private static final Logger LOGGER = LoggerFactory.getLogger( ProbeGenerator.class );
+    
+    private static final String DEFAULT_SERVICE_CONTRACT_ID = "urn:uuid:b10b8c34-76f4-4e1d-938d-20eee3377d22";
 
     private static final int NUM_OF_EXECUTOR_THREADS = 1;
 
@@ -67,6 +69,7 @@ public class ProbeGenerator {
             throw new IllegalArgumentException( "The ConfigurationWatcherImpl parameter cannot be null for ProbeGenerator constructor" );
         }
         serviceContractIds = new ArrayList<String>();
+        serviceContractIds.add( DEFAULT_SERVICE_CONTRACT_ID );
         platformConfiguration = config;
         respondTo = to;
     }
