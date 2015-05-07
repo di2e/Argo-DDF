@@ -255,16 +255,17 @@ public class ProbeHandler implements Runnable {
         List<Service> serviceList = new ArrayList<Service>();
         if ( serviceRegistry != null && serviceRegistry.getServices() != null ) {
             for ( ServiceInfo serviceInfo : serviceRegistry.getServices() ) {
+
                 String contractId = getContractId( serviceInfo );
                 if ( contractId != null ) {
                     Service service = new Service();
                     service.setContractID( contractId );
-                    service.setId( platformConfiguration.getSiteName() );
+                    service.setId( getUniqueServiceId( serviceInfo, platformConfiguration.getSiteName() ) );
 
                     service.setUrl( platformConfiguration.getProtocol() + platformConfiguration.getHostname() + ":" + platformConfiguration.getPort() + serviceInfo.getServiceRelativeUrl() );
                     service.setIpAddress( platformConfiguration.getHostname() );
                     service.setPort( platformConfiguration.getPort() );
-                    service.setServiceName( platformConfiguration.getSiteName() );
+                    service.setServiceName( getUniqueServiceId( serviceInfo, platformConfiguration.getSiteName() ) );
                     service.setDescription( getServiceDescription( serviceInfo ) );
                     service.setContractDescription( serviceInfo.getServiceType() );
                     service.setConsumability( Consumability.MACHINE_CONSUMABLE );
@@ -300,6 +301,10 @@ public class ProbeHandler implements Runnable {
             }
         }
         return null;
+    }
+
+    private String getUniqueServiceId( ServiceInfo serviceInfo, String siteName ) {
+        return StringUtils.replaceChars( siteName + "-" + serviceInfo.getServiceType(), ' ', '-' );
     }
 
     // TODO this is a duplicate method of the one in ProbeGenerator
