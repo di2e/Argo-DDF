@@ -26,8 +26,9 @@
         <AD name="Multicast Port" id="multicastPort" required="true" type="Integer"
             default="4003"/>
 
-        <AD name="Ignore Local Probes" id="ignoreLocalRespondTo" required="true" type="Boolean"
-            default="true" description="Check to ignore any multicast probes that have a respondTo address of this local server."/>
+        <AD name="Ignore Probes List" id="ignoreProbesList" required="true" type="String" cardinality="100"
+            default="/services/argo/response" description="The list of respondTo addresses that should be ignored.  If you wish to ignore all local probes, set this to the same
+            set of values that is set in the Probe Generator 'Respond To URLs' configuration (relative URLs will use host, port, scheme values from DDF Platform Configuration)"/>
 
     </OCD>
 

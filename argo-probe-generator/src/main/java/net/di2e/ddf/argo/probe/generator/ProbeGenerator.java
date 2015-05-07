@@ -43,7 +43,7 @@ import org.slf4j.LoggerFactory;
 public class ProbeGenerator {
 
     private static final Logger LOGGER = LoggerFactory.getLogger( ProbeGenerator.class );
-    
+
     private static final String DEFAULT_SERVICE_CONTRACT_ID = "urn:uuid:b10b8c34-76f4-4e1d-938d-20eee3377d22";
 
     private static final int NUM_OF_EXECUTOR_THREADS = 1;
@@ -52,7 +52,7 @@ public class ProbeGenerator {
     private String address = "230.0.0.1";
     private int ttl = 255;
     private int sendFrequency = 300;
-    private String respondTo = null;
+    private List<String> respondToList = null;
 
     private String probeFormatVersion = ArgoConstants.DEFAULT_PROBE_CONTRACT_ID;
     private String responseFormat = "XML";
@@ -65,13 +65,14 @@ public class ProbeGenerator {
     private ScheduledThreadPoolExecutor executor;
 
     public ProbeGenerator( String to, ConfigurationWatcherImpl config ) {
-        if ( config == null ){
+        if ( config == null ) {
             throw new IllegalArgumentException( "The ConfigurationWatcherImpl parameter cannot be null for ProbeGenerator constructor" );
         }
         serviceContractIds = new ArrayList<String>();
         serviceContractIds.add( DEFAULT_SERVICE_CONTRACT_ID );
         platformConfiguration = config;
-        respondTo = to;
+        respondToList = new ArrayList<String>();
+        respondToList.add( ArgoConstants.DEFAULT_RESPOND_TO );
     }
 
     /**
@@ -106,7 +107,11 @@ public class ProbeGenerator {
             LOGGER.debug( "{} setting send frequence port from '{}' to '{}' and restarting probe generator thread", ArgoConstants.LOG_CONFIG_UPDATE_PREFIX, sendFrequency, freq );
             this.sendFrequency = freq;
             currentTask.cancel( true );
-            currentTask = executor.scheduleAtFixedRate( sender, 1, sendFrequency, TimeUnit.SECONDS );
+            if ( sendFrequency > 0 ) {
+                currentTask = executor.scheduleAtFixedRate( sender, 1, sendFrequency, TimeUnit.SECONDS );
+            } else {
+                LOGGER.info( "Turning off the probe generator, so Argo probes will no longer be sent because frequence was set to {}", sendFrequency );
+            }
         }
     }
 
@@ -115,9 +120,9 @@ public class ProbeGenerator {
         this.ttl = seconds;
     }
 
-    public void setRespondTo( String to ) {
-        LOGGER.debug( "{} setting probe respondTo from '{}' to '{}'", ArgoConstants.LOG_CONFIG_UPDATE_PREFIX, respondTo, to );
-        this.respondTo = to;
+    public void setRespondTo( List<String> toList ) {
+        LOGGER.debug( "{} setting probe respondTo from '{}' to '{}'", ArgoConstants.LOG_CONFIG_UPDATE_PREFIX, respondToList, toList );
+        this.respondToList = toList;
     }
 
     public void setProbeFormatVersion( String version ) {
@@ -135,7 +140,7 @@ public class ProbeGenerator {
         this.serviceContractIds = ids;
     }
 
-    public String getRespondToAddress() {
+    public String expandRespondToAddress( String respondTo ) {
         String address = null;
         if ( respondTo != null ) {
             if ( respondTo.startsWith( "/" ) ) {
@@ -144,7 +149,7 @@ public class ProbeGenerator {
                 address = respondTo;
             }
         }
-        LOGGER.debug( "Setting the respondTo address in the probe to '{}' based on the respondTo configuration value '{}'", address, respondTo );
+        LOGGER.debug( "Expanding the respondTo address in the probe to '{}' based on the respondTo configuration value '{}'", address, respondTo );
         return address;
     }
 
@@ -152,34 +157,38 @@ public class ProbeGenerator {
 
         public void run() {
             MulticastSocket socket = null;
-            if ( respondTo != null ) {
-                try {
-                    socket = new MulticastSocket();
-                    socket.setTimeToLive( ttl );
-                    Probe probe = new Probe();
-                    probe.setRespondTo( getRespondToAddress() );
-                    probe.setId( "urn:uuid:" + UUID.randomUUID() );
-                    probe.setContractID( probeFormatVersion );
-                    probe.setRespondToPayloadType( PayloadType.fromValue( responseFormat ) );
-                    for ( String serviceContractId : serviceContractIds ) {
-                        probe.getServiceContractID().add( serviceContractId );
-                    }
+            if ( respondToList != null && !respondToList.isEmpty() ) {
+                for ( String respondTo : respondToList ) {
+                    try {
+                        socket = new MulticastSocket();
+                        socket.setTimeToLive( ttl );
+                        Probe probe = new Probe();
+                        probe.setRespondTo( expandRespondToAddress( respondTo ) );
+                        probe.setId( "urn:uuid:" + UUID.randomUUID() );
+                        probe.setContractID( probeFormatVersion );
+                        probe.setRespondToPayloadType( PayloadType.fromValue( responseFormat ) );
+                        if ( serviceContractIds != null ) {
+                            for ( String serviceContractId : serviceContractIds ) {
+                                probe.getServiceContractID().add( serviceContractId );
+                            }
+                        }
 
-                    StringWriter writer = new StringWriter();
-                    JAXB.marshal( probe, writer );
-                    String probeXml = writer.toString();
-                    byte[] bytes = probeXml.getBytes( StandardCharsets.UTF_8 );
-                    DatagramPacket packet = new DatagramPacket( bytes, bytes.length, InetAddress.getByName( address ), port );
-                    if ( LOGGER.isDebugEnabled() ) {
-                        LOGGER.debug( "Sending multicast packet out to {}:{}", address, port );
-                        LOGGER.debug( "Sending probe message: {}", probeXml );
-                    }
+                        StringWriter writer = new StringWriter();
+                        JAXB.marshal( probe, writer );
+                        String probeXml = writer.toString();
+                        byte[] bytes = probeXml.getBytes( StandardCharsets.UTF_8 );
+                        DatagramPacket packet = new DatagramPacket( bytes, bytes.length, InetAddress.getByName( address ), port );
+                        if ( LOGGER.isDebugEnabled() ) {
+                            LOGGER.debug( "Sending multicast packet out to {}:{}", address, port );
+                            LOGGER.debug( "Sending probe message: {}", probeXml );
+                        }
 
-                    socket.send( packet );
-                } catch ( IOException | DataBindingException e ) {
-                    LOGGER.warn( "Encountered an error while trying to send out the probe. Could not send multicast message.", e );
-                } finally {
-                    IOUtils.closeQuietly( socket );
+                        socket.send( packet );
+                    } catch ( IOException | DataBindingException e ) {
+                        LOGGER.warn( "Encountered an error while trying to send out the probe. Could not send multicast message.", e );
+                    } finally {
+                        IOUtils.closeQuietly( socket );
+                    }
                 }
             }
         }

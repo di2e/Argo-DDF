@@ -18,40 +18,43 @@
 -->
 <metatype:MetaData xmlns:metatype="http://www.osgi.org/xmlns/metatype/v1.0.0">
 
-    <OCD description="Argo Probe settings for probes for specific Service Contract Ids" name="Argo Probe Generator" id="argo-probe-generator">
+    <OCD description="Argo Probe settings for probes for specific Service Contract Ids" name="Argo Probe Generator"
+        id="argo-probe-generator">
 
-        <AD name="Multicast Address" id="multicastAddress" required="true" type="String" description="IP multicast address to send the probe to."
-            default="230.0.0.1"/>
+        <AD name="Multicast Address" id="multicastAddress" required="true" type="String"
+            description="IP multicast address to send the probe to." default="230.0.0.1" />
 
         <AD name="Multicast Port" id="multicastPort" required="true" type="Integer" description="Multicast port to send the probe to."
-            default="4003"/>
+            default="4003" />
 
-        <AD name="Send Frequency" id="sendFrequency" required="true" type="Integer" description="Amount of time (in seconds) between probe multicasts being sent."
-            default="300"/>
+        <AD name="Send Frequency" id="sendFrequency" required="true" type="Integer"
+            description="Amount of time (in seconds) between probe multicasts being sent (set to zero to turn off)."
+            default="300" />
 
-        <AD name="Probe TTL" id="probeTTL" required="true" type="Integer" description="Time-to-live for the probe multicast packet. TTL of 1 will not leave the local network."
-            default="255"/>
+        <AD name="Probe TTL" id="probeTTL" required="true" type="Integer"
+            description="Time-to-live for the probe multicast packet. TTL of 1 will not leave the local network."
+            default="255" />
 
-        <AD name="Response URL" id="respondTo" required="false" type="String"
-            description="URL address for the response listener service. Must be either an absolute URL that starts with http/https or a relative URL that starts with /"
-            default="/services/argo/response"/>
-            
+        <AD name="Respond To URLs" id="respondTo" required="false" type="String" cardinality="100"
+            description="URL address for the response listener service. Must be either an absolute URL that starts with http/https or a relative URL that starts with / 
+            (relative URLs will use the DDF Platform Settings for host, port, scheme values)"
+            default="/services/argo/response" />
+
         <AD name="Probe Version" id="probeFormatVersion" required="true" type="String"
             description="The version of the probe format to use (this is currently mapped to the 'probe' element 'contractID' attribute)"
-            default="urn:uuid:55f1fecc-bfed-4be0-926b-b36a138a9943"/>
-            
+            default="urn:uuid:55f1fecc-bfed-4be0-926b-b36a138a9943" />
+
         <AD name="Probe Response Format" id="responseFormat" required="true" type="String" default="XML"
             description="The value for the 'responseToPayloadType' (currently only XML is supported not JSON)">
             <Option label="XML" value="XML" />
         </AD>
-            
+
         <AD name="Service Contract IDs" id="serviceContractIds" required="false" type="String" cardinality="100"
-            description="List of Service Contract IDs to include in the probe"
-            default="urn:uuid:b10b8c34-76f4-4e1d-938d-20eee3377d22"/>
+            description="List of Service Contract IDs to include in the probe" default="urn:uuid:b10b8c34-76f4-4e1d-938d-20eee3377d22" />
 
     </OCD>
 
     <Designate pid="argo-probe-generator">
-        <Object ocdref="argo-probe-generator"/>
+        <Object ocdref="argo-probe-generator" />
     </Designate>
 </metatype:MetaData>

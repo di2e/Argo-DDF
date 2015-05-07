@@ -19,10 +19,13 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
 import net.di2e.ddf.argo.api.ServiceMapping;
+import net.di2e.ddf.argo.common.ArgoConstants;
 
 import org.codice.ddf.configuration.impl.ConfigurationWatcherImpl;
 import org.slf4j.Logger;
@@ -34,7 +37,7 @@ public class ProbeResponder {
 
     private static final String MULTICAST_ADDRESS = "multicastAddress";
     private static final String MULTICAST_PORT = "multicastPort";
-    private static final String IGNORE_LOCAL_RESPONDTO = "ignoreLocalRespondTo";
+    private static final String IGNORE_PROBES_LIST = "ignoreProbesList";
 
     private static final Logger LOGGER = LoggerFactory.getLogger( ProbeResponder.class );
 
@@ -47,17 +50,19 @@ public class ProbeResponder {
 
     private int port = 4003;
     private String address = "230.0.0.1";
-    private boolean ignoreLocalProbes = true;
+    private List<String> ignoreProbesList = null;
 
     public ProbeResponder( ServiceRegistry registry, ConfigurationWatcherImpl config, List<ServiceMapping> mappings ) {
         this.serviceRegistry = registry;
         this.platformConfiguration = config;
         this.serviceMappings = mappings;
+        ignoreProbesList = new ArrayList<String>();
+        ignoreProbesList.add( ArgoConstants.DEFAULT_RESPOND_TO );
     }
 
     public void init() throws IOException {
         startSocket( port, address );
-        handler = new ProbeHandler( socket, platformConfiguration, serviceRegistry, serviceMappings, ignoreLocalProbes );
+        handler = new ProbeHandler( socket, platformConfiguration, serviceRegistry, serviceMappings, ignoreProbesList );
         Thread listenerThread = new Thread( handler );
         listenerThread.start();
     }
@@ -69,12 +74,12 @@ public class ProbeResponder {
         closeSocket( address );
     }
     
-    public void updateConfiguration( Map<String, String> properties ) {
-        LOGGER.debug( "ProbeResponder updateConfiguratoin called with properties: {}", properties );
+    public void updateConfiguration( Map<String, Object> properties ) {
+        LOGGER.debug( "{} ProbeResponder updateConfiguration called with properties: {}", ArgoConstants.LOG_CONFIG_UPDATE_PREFIX, properties );
         if ( properties != null ) {
             destroy();
 
-            address = properties.get( MULTICAST_ADDRESS );
+            address = (String) properties.get( MULTICAST_ADDRESS );
             Object portValue = properties.get( MULTICAST_PORT );
             if ( portValue != null ){
                 try{
@@ -83,8 +88,8 @@ public class ProbeResponder {
                     LOGGER.warn( "Could not set port value because it is not an integer: " + e.getMessage(), e );
                 }
             }
-
-            ignoreLocalProbes = Boolean.TRUE.equals( properties.get( IGNORE_LOCAL_RESPONDTO ) );
+            String[] ignoreArray = (String[]) properties.get( IGNORE_PROBES_LIST );
+            ignoreProbesList = ignoreArray == null ? new ArrayList<String>() : Arrays.asList( ignoreArray );
 
             try {
                 init();

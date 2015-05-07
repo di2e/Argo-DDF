@@ -60,16 +60,16 @@ public class ProbeHandler implements Runnable {
 
     private MulticastSocket socket;
     private boolean isCanceled = false;
-    private boolean ignoreLocalRespondTo = true;
+    private List<String> ignoreProbesList = null;
 
     private ConfigurationWatcherImpl platformConfiguration = null;
     private List<ServiceMapping> serviceMappings = null;
     private ServiceRegistry serviceRegistry = null;
 
-    public ProbeHandler( MulticastSocket socket, ConfigurationWatcherImpl config, ServiceRegistry registry, List<ServiceMapping> mappings, boolean ignoreLocal ) {
+    public ProbeHandler( MulticastSocket socket, ConfigurationWatcherImpl config, ServiceRegistry registry, List<ServiceMapping> mappings, List<String> ignoreList ) {
         this.socket = socket;
         this.platformConfiguration = config;
-        this.ignoreLocalRespondTo = ignoreLocal;
+        this.ignoreProbesList = ignoreList;
         this.serviceRegistry = registry;
         this.serviceMappings = mappings;
     }
@@ -91,25 +91,31 @@ public class ProbeHandler implements Runnable {
                 Probe probe = JAXB.unmarshal( new StringReader( data ), Probe.class );
                 String respondTo = probe.getRespondTo();
 
-                if ( ignoreLocalRespondTo ) {
-                    String hostname = platformConfiguration.getHostname();
-                    // TODO cache the request ID and use that instead of the local hostname
-                    if ( respondTo != null && respondTo.contains( hostname ) ) {
-                        LOGGER.debug( "Configuration is set to ignore probes that have a respondTo to the local server. Incoming probe contains respondTo of ({}). IGNORING PROBE.", respondTo );
-                        continue;
+                boolean ignoreProbe = false;
+                if ( ignoreProbesList != null && !ignoreProbesList.isEmpty() ) {
+                    for ( String ignoreProbeString : ignoreProbesList ) {
+                        String updatedIgnoreString = exapndRespondToAddress( ignoreProbeString );
+                        // TODO cache the request ID and use that instead of the local hostname
+                        if ( StringUtils.equalsIgnoreCase( updatedIgnoreString, respondTo ) ) {
+                            LOGGER.debug( "Configuration is set to ignore probes that have a respondTo of '{}'. Incoming probe contains respondTo of '{}'. IGNORING PROBE.", ignoreProbeString,
+                                    respondTo );
+                            ignoreProbe = true;
+                        }
                     }
                 }
-                List<String> contractIDs = probe.getServiceContractID();
-                // TODO handle the different contractID
-                // URI contractId = probe.getContractID();
-                String probeId = probe.getId();
-                String response = generateServiceResponse( probe.getRespondToPayloadType(), contractIDs, probeId );
+                if ( !ignoreProbe ) {
+                    List<String> contractIDs = probe.getServiceContractID();
+                    // TODO handle the different contractID
+                    // URI contractId = probe.getContractID();
+                    String probeId = probe.getId();
+                    String response = generateServiceResponse( probe.getRespondToPayloadType(), contractIDs, probeId );
 
-                if ( StringUtils.isNotBlank( response ) ) {
-                    LOGGER.debug( "Returning back to {} with the following response:\n{}", probe.getRespondTo(), response );
-                    sendResponse( respondTo, response, probe.getRespondToPayloadType() );
-                } else {
-                    LOGGER.debug( "No services found that match the incoming contract IDs, not sending a response." );
+                    if ( StringUtils.isNotBlank( response ) ) {
+                        LOGGER.debug( "Returning back to {} with the following response:\n{}", probe.getRespondTo(), response );
+                        sendResponse( respondTo, response, probe.getRespondToPayloadType() );
+                    } else {
+                        LOGGER.debug( "No services found that match the incoming contract IDs, not sending a response." );
+                    }
                 }
             } catch ( SocketTimeoutException ste ) {
                 LOGGER.trace( "Received timeout on socket, resetting socket to check for cancellation." );
@@ -294,6 +300,20 @@ public class ProbeHandler implements Runnable {
             }
         }
         return null;
+    }
+
+    // TODO this is a duplicate method of the one in ProbeGenerator
+    public String exapndRespondToAddress( String respondTo ) {
+        String address = null;
+        if ( respondTo != null ) {
+            if ( respondTo.startsWith( "/" ) ) {
+                address = platformConfiguration.getProtocol() + platformConfiguration.getHostname() + ":" + platformConfiguration.getPort() + respondTo;
+            } else {
+                address = respondTo;
+            }
+        }
+        LOGGER.debug( "Exapnding the respondTo address in the probe to '{}' based on the respondTo configuration value '{}'", address, respondTo );
+        return address;
     }
 
 }

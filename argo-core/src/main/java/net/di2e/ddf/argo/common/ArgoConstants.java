@@ -20,6 +20,8 @@ public class ArgoConstants {
     public static final String LOG_CONFIG_UPDATE_PREFIX = "ConfigUpdate:";
     public static final String DEFAULT_PROBE_CONTRACT_ID = "urn:uuid:55f1fecc-bfed-4be0-926b-b36a138a9943";
 
+    public static final String DEFAULT_RESPOND_TO = "/services/argo/response";
+
     public static final String RESPONSE_ID = "responseID";
     public static final String PROBE_ID = "probeID";
     public static final String RESPONSES = "responses";
