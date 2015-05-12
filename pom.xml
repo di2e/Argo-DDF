@@ -17,7 +17,7 @@
 
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>net.di2e.ddf</groupId>
@@ -41,16 +41,27 @@
         </license>
     </licenses>
 
+    <scm>
+        <url>https://github.com/di2e/Argo-DDF</url>
+        <connection>scm:git:git://github.com/di2e/Argo-DDF.git</connection>
+        <developerConnection>scm:git:git://github.com/di2e/Argo-DDF.git</developerConnection>
+        <tag>HEAD</tag>
+    </scm>
+
     <properties>
         <osgi.version>4.3.1</osgi.version>
         <slf4j.version>1.7.6</slf4j.version>
-		<ddf.libs.platform-config-impl.version>1.0.0</ddf.libs.platform-config-impl.version>
-		<ddf.catalog-core-api.version>2.4.1</ddf.catalog-core-api.version>
+        <ddf.libs.platform-config-impl.version>1.0.0</ddf.libs.platform-config-impl.version>
+        <ddf.catalog-core-api.version>2.4.1</ddf.catalog-core-api.version>
         <ddf.registry.version>0.1.0</ddf.registry.version>
-		
+
         <maven.compiler.source>1.7</maven.compiler.source>
         <maven.compiler.target>1.7</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+        <maven.release.plugin.version>2.5</maven.release.plugin.version>
+        <maven.clean.plugin.version>2.5</maven.clean.plugin.version>
+        <maven.install.plugin.version>2.5.1</maven.install.plugin.version>
     </properties>
 
     <modules>
@@ -58,7 +69,7 @@
         <module>argo-probe-generator</module>
         <module>argo-probe-responder</module>
         <module>argo-probe-responselistener</module>
-		<module>argo-app</module>
+        <module>argo-app</module>
     </modules>
 
     <dependencies>
@@ -73,7 +84,7 @@
             <artifactId>org.osgi.core</artifactId>
             <version>${osgi.version}</version>
         </dependency>
-		<dependency>
+        <dependency>
             <groupId>org.osgi</groupId>
             <artifactId>org.osgi.compendium</artifactId>
             <version>${osgi.version}</version>
@@ -94,7 +105,17 @@
                         </instructions>
                     </configuration>
                 </plugin>
-
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-release-plugin</artifactId>
+                    <version>${maven.release.plugin.version}</version>
+                    <configuration>
+                        <autoVersionSubmodules>true</autoVersionSubmodules>
+                        <preparationGoals>clean verify install</preparationGoals>
+                        <pushChanges>false</pushChanges>
+                        <mavenExecutorId>forked-path</mavenExecutorId>
+                    </configuration>
+                </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
@@ -107,39 +128,39 @@
                         <encoding>${project.build.sourceEncoding}</encoding>
                     </configuration>
                 </plugin>
-				<plugin>
-                <groupId>org.owasp</groupId>
-                <artifactId>dependency-check-maven</artifactId>
-                <version>1.2.10</version>
-                <configuration>
-                    <skipProvidedScope>false</skipProvidedScope>
-                    <skipRuntimeScope>false</skipRuntimeScope>
-					<failBuildOnCVSS>0</failBuildOnCVSS>
-                </configuration>
-				<executions>
-                  <execution>
-                      <goals>
-                          <goal>check</goal>
-                      </goals>
-                  </execution>
-              </executions>
-                
-            </plugin>
+                <plugin>
+                    <groupId>org.owasp</groupId>
+                    <artifactId>dependency-check-maven</artifactId>
+                    <version>1.2.10</version>
+                    <configuration>
+                        <skipProvidedScope>false</skipProvidedScope>
+                        <skipRuntimeScope>false</skipRuntimeScope>
+                        <failBuildOnCVSS>0</failBuildOnCVSS>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>check</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+
+                </plugin>
             </plugins>
-			
+
         </pluginManagement>
     </build>
-	
-	<reporting>
-	   <plugins>
-	        <plugin>
+
+    <reporting>
+        <plugins>
+            <plugin>
                 <groupId>org.owasp</groupId>
                 <artifactId>dependency-check-maven</artifactId>
                 <version>1.2.10</version>
                 <configuration>
                     <skipProvidedScope>false</skipProvidedScope>
                     <skipRuntimeScope>false</skipRuntimeScope>
-					<failBuildOnCVSS>8</failBuildOnCVSS>
+                    <failBuildOnCVSS>8</failBuildOnCVSS>
                 </configuration>
                 <reportSets>
                     <reportSet>
@@ -149,11 +170,11 @@
                     </reportSet>
                 </reportSets>
             </plugin>
-	   </plugins>
-	
-	</reporting>
-	
-	<repositories>
+        </plugins>
+
+    </reporting>
+
+    <repositories>
         <repository>
             <id>shibboleth-public</id>
             <name>Shibboleth Public</name>
