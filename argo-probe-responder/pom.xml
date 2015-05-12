@@ -21,7 +21,7 @@
     <parent>
         <groupId>net.di2e.ddf</groupId>
         <artifactId>argo</artifactId>
-        <version>0.7.0</version>
+        <version>0.8.0-SNAPSHOT</version>
     </parent>
     
     <groupId>net.di2e.ddf.argo</groupId>
