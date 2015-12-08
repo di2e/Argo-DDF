@@ -21,7 +21,7 @@
 
     <groupId>net.di2e.ddf</groupId>
     <artifactId>argo</artifactId>
-    <version>0.8.0</version>
+    <version>0.8.1-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>Argo</name>
     <description>Argo protocol Probe, Responder and Listener implementation for DDF</description>
@@ -44,7 +44,7 @@
         <url>https://github.com/di2e/Argo-DDF</url>
         <connection>scm:git:git://github.com/di2e/Argo-DDF.git</connection>
         <developerConnection>scm:git:git://github.com/di2e/Argo-DDF.git</developerConnection>
-        <tag>argo-0.8.0</tag>
+        <tag>HEAD</tag>
     </scm>
 
     <properties>
