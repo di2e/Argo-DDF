@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2014 Cohesive Integrations, LLC (info@cohesiveintegrations.com)
+ * Copyright (C) 2015 Pink Summit, LLC (info@pinksummit.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,8 +32,10 @@ import javax.xml.bind.DataBindingException;
 import javax.xml.bind.JAXB;
 
 import net.di2e.ddf.argo.common.ArgoConstants;
-import net.di2e.ddf.argo.jaxb.PayloadType;
-import net.di2e.ddf.argo.jaxb.Probe;
+import net.di2e.ddf.argo.jaxb.probe.Probe;
+import net.di2e.ddf.argo.jaxb.probe.Probe.Ra;
+import net.di2e.ddf.argo.jaxb.probe.Probe.Ra.RespondTo;
+import net.di2e.ddf.argo.jaxb.probe.Probe.Scids;
 
 import org.apache.commons.io.IOUtils;
 import org.codice.ddf.configuration.impl.ConfigurationWatcherImpl;
@@ -54,7 +56,6 @@ public class ProbeGenerator {
     private int sendFrequency = 300;
     private List<String> respondToList = null;
 
-    private String probeFormatVersion = ArgoConstants.DEFAULT_PROBE_CONTRACT_ID;
     private String responseFormat = "XML";
     private List<String> serviceContractIds = null;
 
@@ -125,11 +126,6 @@ public class ProbeGenerator {
         this.respondToList = toList;
     }
 
-    public void setProbeFormatVersion( String version ) {
-        LOGGER.debug( "{} setting probeFormatVersion from '{}' to '{}'", ArgoConstants.LOG_CONFIG_UPDATE_PREFIX, probeFormatVersion, version );
-        this.probeFormatVersion = version;
-    }
-
     public void setResponseFormat( String format ) {
         LOGGER.debug( "{} setting probe responseFormat from '{}' to '{}'", ArgoConstants.LOG_CONFIG_UPDATE_PREFIX, responseFormat, format );
         this.responseFormat = format;
@@ -158,19 +154,28 @@ public class ProbeGenerator {
         public void run() {
             MulticastSocket socket = null;
             if ( respondToList != null && !respondToList.isEmpty() ) {
-                for ( String respondTo : respondToList ) {
+                for ( String respondToString : respondToList ) {
                     try {
                         socket = new MulticastSocket();
                         socket.setTimeToLive( ttl );
                         Probe probe = new Probe();
-                        probe.setRespondTo( expandRespondToAddress( respondTo ) );
                         probe.setId( "urn:uuid:" + UUID.randomUUID() );
-                        probe.setContractID( probeFormatVersion );
-                        probe.setRespondToPayloadType( PayloadType.fromValue( responseFormat ) );
+                        String sitename = platformConfiguration.getSiteName();
+                        probe.setClient( sitename );
+                        Ra responseAddress = new Ra();
+                        RespondTo respondTo = new RespondTo();
+                        respondTo.setLabel( sitename );
+                        respondTo.setValue( expandRespondToAddress( respondToString ) );
+                        responseAddress.getRespondTo().add( respondTo );
+                        probe.setRa( responseAddress );
+
+                        probe.setRespondToPayloadType( responseFormat );
                         if ( serviceContractIds != null ) {
+                            Scids scids = new Scids();
                             for ( String serviceContractId : serviceContractIds ) {
-                                probe.getServiceContractID().add( serviceContractId );
+                                scids.getServiceContractID().add( serviceContractId );
                             }
+                            probe.setScids( scids );
                         }
 
                         StringWriter writer = new StringWriter();

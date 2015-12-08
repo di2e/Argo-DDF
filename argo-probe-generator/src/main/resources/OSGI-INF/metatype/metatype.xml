@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (C) 2014 Cohesive Integrations, LLC (info@cohesiveintegrations.com)
+    Copyright (C) 2015 Pink Summit, LLC (info@pinksummit.com)
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -39,10 +39,6 @@
             description="URL address for the response listener service. Must be either an absolute URL that starts with http/https or a relative URL that starts with / 
             (relative URLs will use the DDF Platform Settings for host, port, scheme values)"
             default="/services/argo/response" />
-
-        <AD name="Probe Version" id="probeFormatVersion" required="true" type="String"
-            description="The version of the probe format to use (this is currently mapped to the 'probe' element 'contractID' attribute)"
-            default="urn:uuid:55f1fecc-bfed-4be0-926b-b36a138a9943" />
 
         <AD name="Probe Response Format" id="responseFormat" required="true" type="String" default="XML"
             description="The value for the 'responseToPayloadType' (currently only XML is supported not JSON)">

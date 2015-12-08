@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2014 Cohesive Integrations, LLC (info@cohesiveintegrations.com)
+ * Copyright (C) 2015 Pink Summit, LLC (info@pinksummit.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import java.util.Map;
 import net.di2e.ddf.argo.api.ServiceMapping;
 import net.di2e.ddf.argo.common.ArgoConstants;
 
+import org.apache.commons.lang.StringUtils;
 import org.codice.ddf.configuration.impl.ConfigurationWatcherImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -74,6 +75,25 @@ public class ProbeResponder {
         closeSocket( address );
     }
     
+    public void setIgnoreProbesList( List<String> ignoreList ) {
+        LOGGER.debug( "ConfigUpdate: Updating the IgnoreProbesList values from {} to {}", ignoreProbesList, ignoreList );
+        ignoreProbesList = ignoreList;
+    }
+
+    public void setMulticastPort( Integer p ) {
+        if ( p != null ) {
+            LOGGER.debug( "ConfigUpdate: Updating the probe responder listen port value from {} to {}", port, p );
+            port = p;
+        }
+    }
+
+    public void setMulticastAddress( String a ) {
+        if ( StringUtils.isNotBlank( a ) ) {
+            LOGGER.debug( "ConfigUpdate: Updating the probe responder multicast address value from {} to {}", this.address, a );
+            address = a;
+        }
+    }
+
     public void updateConfiguration( Map<String, Object> properties ) {
         LOGGER.debug( "{} ProbeResponder updateConfiguration called with properties: {}", ArgoConstants.LOG_CONFIG_UPDATE_PREFIX, properties );
         if ( properties != null ) {
@@ -89,7 +109,7 @@ public class ProbeResponder {
                 }
             }
             String[] ignoreArray = (String[]) properties.get( IGNORE_PROBES_LIST );
-            ignoreProbesList = ignoreArray == null ? new ArrayList<String>() : Arrays.asList( ignoreArray );
+            setIgnoreProbesList( ignoreArray == null ? new ArrayList<String>() : Arrays.asList( ignoreArray ) );
 
             try {
                 init();

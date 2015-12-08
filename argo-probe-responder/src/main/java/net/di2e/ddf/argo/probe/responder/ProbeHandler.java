@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2014 Cohesive Integrations, LLC (info@cohesiveintegrations.com)
+ * Copyright (C) 2015 Pink Summit, LLC (info@pinksummit.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import java.io.StringWriter;
 import java.net.DatagramPacket;
 import java.net.MulticastSocket;
 import java.net.SocketTimeoutException;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -28,15 +29,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import javax.xml.bind.DataBindingException;
 import javax.xml.bind.JAXB;
 
 import net.di2e.ddf.argo.api.ServiceMapping;
 import net.di2e.ddf.argo.common.ArgoConstants;
-import net.di2e.ddf.argo.jaxb.Consumability;
-import net.di2e.ddf.argo.jaxb.PayloadType;
-import net.di2e.ddf.argo.jaxb.Probe;
-import net.di2e.ddf.argo.jaxb.Service;
-import net.di2e.ddf.argo.jaxb.Services;
+import net.di2e.ddf.argo.jaxb.probe.Probe;
+import net.di2e.ddf.argo.jaxb.probe.Probe.Ra.RespondTo;
+import net.di2e.ddf.argo.jaxb.response.Services;
+import net.di2e.ddf.argo.jaxb.response.Services.Service;
+import net.di2e.ddf.argo.jaxb.response.Services.Service.AccessPoints;
+import net.di2e.ddf.argo.jaxb.response.Services.Service.AccessPoints.AccessPoint;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -81,42 +84,46 @@ public class ProbeHandler implements Runnable {
     @Override
     public void run() {
         LOGGER.debug( "Listening for any multicast packets." );
+        String data = "";
         while ( !isCanceled ) {
             try {
                 byte buf[] = new byte[1024];
                 DatagramPacket pack = new DatagramPacket( buf, buf.length );
                 socket.receive( pack );
-                String data = new String( pack.getData(), pack.getOffset(), pack.getLength() );
+                data = new String( pack.getData(), pack.getOffset(), pack.getLength() );
                 LOGGER.debug( "Packet received with the following payload: {}.", data );
                 Probe probe = JAXB.unmarshal( new StringReader( data ), Probe.class );
-                String respondTo = probe.getRespondTo();
+
+                List<RespondTo> respondTo = probe.getRa().getRespondTo();
 
                 boolean ignoreProbe = false;
                 if ( ignoreProbesList != null && !ignoreProbesList.isEmpty() ) {
                     for ( String ignoreProbeString : ignoreProbesList ) {
-                        String updatedIgnoreString = exapndRespondToAddress( ignoreProbeString );
+                        String updatedIgnoreString = expandRespondToAddress( ignoreProbeString );
                         // TODO cache the request ID and use that instead of the local hostname
-                        if ( StringUtils.equalsIgnoreCase( updatedIgnoreString, respondTo ) ) {
+                        if ( StringUtils.equalsIgnoreCase( updatedIgnoreString, respondTo.get( 0 ).getValue() ) ) {
                             LOGGER.debug( "Configuration is set to ignore probes that have a respondTo of '{}'. Incoming probe contains respondTo of '{}'. IGNORING PROBE.", ignoreProbeString,
-                                    respondTo );
+                                    respondTo.get( 0 ).getValue() );
                             ignoreProbe = true;
                         }
                     }
                 }
                 if ( !ignoreProbe ) {
-                    List<String> contractIDs = probe.getServiceContractID();
+                    List<String> contractIDs = probe.getScids().getServiceContractID();
                     // TODO handle the different contractID
                     // URI contractId = probe.getContractID();
                     String probeId = probe.getId();
                     String response = generateServiceResponse( probe.getRespondToPayloadType(), contractIDs, probeId );
 
                     if ( StringUtils.isNotBlank( response ) ) {
-                        LOGGER.debug( "Returning back to {} with the following response:\n{}", probe.getRespondTo(), response );
-                        sendResponse( respondTo, response, probe.getRespondToPayloadType() );
+                        LOGGER.debug( "Returning back to {} with the following response:\n{}", respondTo.get( 0 ).getValue(), response );
+                        sendResponse( respondTo.get( 0 ).getValue(), response, probe.getRespondToPayloadType() );
                     } else {
                         LOGGER.debug( "No services found that match the incoming contract IDs, not sending a response." );
                     }
                 }
+            } catch ( DataBindingException e ) {
+                LOGGER.warn( "Issue parsing probe response: {}", data, e );
             } catch ( SocketTimeoutException ste ) {
                 LOGGER.trace( "Received timeout on socket, resetting socket to check for cancellation." );
             } catch ( IOException ioe ) {
@@ -132,7 +139,7 @@ public class ProbeHandler implements Runnable {
 
     }
 
-    private String generateServiceResponse( PayloadType payloadType, List<String> contractIDs, String probeId ) {
+    private String generateServiceResponse( String payloadType, List<String> contractIDs, String probeId ) {
         String response = null;
 
         List<Service> responseServiceList = new ArrayList<Service>( getServiceList() );
@@ -141,6 +148,7 @@ public class ProbeHandler implements Runnable {
             while ( serviceIterator.hasNext() ) {
                 Service curService = serviceIterator.next();
                 if ( !contractIDs.contains( curService.getContractID() ) ) {
+                    LOGGER.debug( "Removing the service with contract ID {} from list because it didn't match the expected IDs {}", curService.getContractID(), contractIDs );
                     serviceIterator.remove();
                 }
             }
@@ -151,17 +159,12 @@ public class ProbeHandler implements Runnable {
             }
         }
 
-        switch ( payloadType ) {
-        case XML:
-            response = getXMLServices( responseServiceList, probeId );
-            break;
-        case JSON:
+        if ( Probe.JSON.equalsIgnoreCase( payloadType ) ) {
             response = getJSONServices( responseServiceList, probeId );
-            break;
-        default:
+        } else {
             response = getXMLServices( responseServiceList, probeId );
-            break;
         }
+
         return response;
     }
 
@@ -201,13 +204,13 @@ public class ProbeHandler implements Runnable {
             serviceMap.put( ArgoConstants.SERVICE_CONTRACTID_KEY, service.getContractID() );
             serviceMap.put( ArgoConstants.ID_KEY, service.getId() );
 
-            serviceMap.put( ArgoConstants.URL_KEY, service.getUrl() );
-            serviceMap.put( ArgoConstants.IPADDRESS_KEY, service.getIpAddress() );
-            serviceMap.put( ArgoConstants.PORT_KEY, service.getPort() );
+            serviceMap.put( ArgoConstants.URL_KEY, service.getAccessPoints().getAccessPoint().get( 0 ).getUrl() );
+            serviceMap.put( ArgoConstants.IPADDRESS_KEY, service.getAccessPoints().getAccessPoint().get( 0 ).getIpAddress() );
+            serviceMap.put( ArgoConstants.PORT_KEY, service.getAccessPoints().getAccessPoint().get( 0 ).getPort() );
             serviceMap.put( ArgoConstants.SERVICENAME_KEY, service.getServiceName() );
             serviceMap.put( ArgoConstants.DESCRIPTION_KEY, service.getDescription() );
             serviceMap.put( ArgoConstants.CONTRACT_DESCRIPTION_KEY, service.getContractDescription() );
-            serviceMap.put( ArgoConstants.CONSUMABILITY_KEY, service.getConsumability().value() );
+            serviceMap.put( ArgoConstants.CONSUMABILITY_KEY, service.getConsumability() );
             servicesArray.put( serviceMap );
         }
         jsonObject.put( ArgoConstants.RESPONSES, servicesArray );
@@ -224,19 +227,10 @@ public class ProbeHandler implements Runnable {
      * @param payloadType
      *            Encoding type of the response, should be either XML or JSON.
      */
-    private void sendResponse( String endpoint, String responseStr, PayloadType payloadType ) {
-        ContentType contentType;
-        switch ( payloadType ) {
-        case XML:
-            contentType = ContentType.TEXT_XML;
-            break;
-        case JSON:
+    private void sendResponse( String endpoint, String responseStr, String payloadType ) {
+        ContentType contentType = ContentType.TEXT_XML;
+        if ( Probe.JSON.equalsIgnoreCase( payloadType ) ) {
             contentType = ContentType.APPLICATION_JSON;
-            break;
-        default:
-            // it shouldn't get here, but send back as xml
-            contentType = ContentType.TEXT_XML;
-            break;
         }
         CloseableHttpClient httpClient = HttpClients.createDefault();
         HttpPost httpPost = new HttpPost( endpoint );
@@ -261,14 +255,20 @@ public class ProbeHandler implements Runnable {
                     Service service = new Service();
                     service.setContractID( contractId );
                     service.setId( getUniqueServiceId( serviceInfo, platformConfiguration.getSiteName() ) );
+                    AccessPoints accessPoints = new AccessPoints();
+                    List<AccessPoint> accessPointList = accessPoints.getAccessPoint();
+                    AccessPoint accessPoint = new AccessPoint();
+                    accessPoint.setUrl( URI.create( platformConfiguration.getProtocol() + platformConfiguration.getHostname() + ":" + platformConfiguration.getPort()
+                            + serviceInfo.getServiceRelativeUrl() ) );
+                    accessPoint.setIpAddress( platformConfiguration.getHostname() );
+                    accessPoint.setPort( String.valueOf( platformConfiguration.getPort() ) );
+                    accessPointList.add( accessPoint );
+                    service.setAccessPoints( accessPoints );
 
-                    service.setUrl( platformConfiguration.getProtocol() + platformConfiguration.getHostname() + ":" + platformConfiguration.getPort() + serviceInfo.getServiceRelativeUrl() );
-                    service.setIpAddress( platformConfiguration.getHostname() );
-                    service.setPort( platformConfiguration.getPort() );
                     service.setServiceName( getUniqueServiceId( serviceInfo, platformConfiguration.getSiteName() ) );
                     service.setDescription( getServiceDescription( serviceInfo ) );
                     service.setContractDescription( serviceInfo.getServiceType() );
-                    service.setConsumability( Consumability.MACHINE_CONSUMABLE );
+                    service.setConsumability( Services.MACHINE_CONSUMABLE );
                     serviceList.add( service );
 
                 } else {
@@ -308,7 +308,7 @@ public class ProbeHandler implements Runnable {
     }
 
     // TODO this is a duplicate method of the one in ProbeGenerator
-    public String exapndRespondToAddress( String respondTo ) {
+    public String expandRespondToAddress( String respondTo ) {
         String address = null;
         if ( respondTo != null ) {
             if ( respondTo.startsWith( "/" ) ) {

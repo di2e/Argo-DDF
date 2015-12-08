@@ -13,12 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.di2e.ddf.argo.api;
+package net.di2e.ddf.argo.jaxb.response;
 
-public interface ServiceMapping {
+import java.net.URI;
+import javax.xml.bind.annotation.adapters.XmlAdapter;
 
-    String getServiceType();
+public class Adapter1
+    extends XmlAdapter<String, URI>
+{
 
-    String getServiceContractId();
+
+    public URI unmarshal(String value) {
+        return (java.net.URI.create(value));
+    }
+
+    public String marshal(URI value) {
+        if (value == null) {
+            return null;
+        }
+        return value.toString();
+    }
 
 }

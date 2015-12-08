@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2014 Cohesive Integrations, LLC (info@cohesiveintegrations.com)
+ * Copyright (C) 2015 Pink Summit, LLC (info@pinksummit.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,8 +28,10 @@ import javax.ws.rs.Path;
 
 import net.di2e.ddf.argo.api.ServiceMapping;
 import net.di2e.ddf.argo.common.ArgoConstants;
-import net.di2e.ddf.argo.jaxb.Service;
-import net.di2e.ddf.argo.jaxb.Services;
+import net.di2e.ddf.argo.jaxb.response.Services;
+import net.di2e.ddf.argo.jaxb.response.Services.Service;
+import net.di2e.ddf.argo.jaxb.response.Services.Service.AccessPoints;
+import net.di2e.ddf.argo.jaxb.response.Services.Service.AccessPoints.AccessPoint;
 
 import org.apache.commons.lang.StringUtils;
 import org.codice.ddf.configuration.impl.ConfigurationWatcherImpl;
@@ -104,8 +106,20 @@ public class ProbeResponseEndpoint {
                     String pid = serviceResolver.getFactoryPid( serviceType );
                     LOGGER.debug( "Got a factory pid of '{}' for service '{}' with service contract id '{}' so attempting to create new source '{}'", pid, serviceType, service.getContractID(),
                             sourceId );
-                    createSource( pid, sourceId, service.getUrl() );
-                    createdSources.add( sourceId );
+                    AccessPoints accessPoints = service.getAccessPoints();
+                    if ( accessPoints != null ){
+                        List<AccessPoint> accessPoint = accessPoints.getAccessPoint();
+                        if ( accessPoint != null && !accessPoint.isEmpty() ){
+                            createSource( pid, sourceId, accessPoint.get( 0 ).getUrl().toString() );
+                            createdSources.add( sourceId );
+
+                        } else {
+                            LOGGER.debug( "There were no access points in the service message so cannot configure a federated source" );
+                        }
+                    } else {
+                        LOGGER.debug( "There were no access points in the service message so cannot configure a federated source" );
+                    }
+                    
                 } else {
                     LOGGER.debug( "Could not find a Service Type for the Service Contract ID '{}'", service.getContractID() );
                 }
